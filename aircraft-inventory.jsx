@@ -6,31 +6,6 @@ const CONDITIONS = ["New", "Serviceable", "Unserviceable", "Quarantined"];
 const LOCATIONS = ["Warehouse A", "Warehouse B", "Hangar 1", "Hangar 2", "Quarantine Bay", "Incoming Inspection"];
 const ROLES = { ADMIN: "Admin", CONTROLLER: "Stock Controller", VIEWER: "Viewer" };
 
-const USERS_DB = [
-  { id: 1, username: "admin", password: "admin", name: "Admin User", role: ROLES.ADMIN },
-  { id: 2, username: "controller", password: "ctrl1", name: "Jane Martinez", role: ROLES.CONTROLLER },
-  { id: 3, username: "viewer", password: "view1", name: "Tom Chen", role: ROLES.VIEWER },
-];
-
-const seedParts = [
-  { id: 1, partNumber: "PN-7201-A", description: "Turbine Blade Assembly", category: "Engine", manufacturer: "Rolls-Royce", serialNumber: "SN-TR-90412", batchNumber: "BT-2025-001", quantity: 12, reorderPoint: 5, location: "Warehouse A", condition: "New", certOfConformance: "COC-RR-2025-0412", shelfLife: "2028-06-15", unitCost: 14500 },
-  { id: 2, partNumber: "PN-3305-C", description: "EFIS Display Unit", category: "Avionics", manufacturer: "Honeywell", serialNumber: "SN-EF-77231", batchNumber: "BT-2025-002", quantity: 3, reorderPoint: 4, location: "Warehouse B", condition: "Serviceable", certOfConformance: "COC-HW-2025-0098", shelfLife: "2027-12-01", unitCost: 32000 },
-  { id: 3, partNumber: "PN-1150-B", description: "Hydraulic Pump Assy", category: "Hydraulic", manufacturer: "Parker Hannifin", serialNumber: "SN-HP-55102", batchNumber: "BT-2024-088", quantity: 8, reorderPoint: 3, location: "Hangar 1", condition: "New", certOfConformance: "COC-PH-2024-0088", shelfLife: "2029-03-20", unitCost: 8700 },
-  { id: 4, partNumber: "PN-6600-D", description: "Main Landing Gear Actuator", category: "Landing Gear", manufacturer: "Safran", serialNumber: "SN-LG-34201", batchNumber: "BT-2025-015", quantity: 2, reorderPoint: 2, location: "Warehouse A", condition: "Serviceable", certOfConformance: "COC-SF-2025-0015", shelfLife: "2030-01-10", unitCost: 45000 },
-  { id: 5, partNumber: "PN-8820-E", description: "Generator Control Unit", category: "Electrical", manufacturer: "GE Aviation", serialNumber: "SN-GC-61023", batchNumber: "BT-2025-022", quantity: 0, reorderPoint: 2, location: "Warehouse B", condition: "Unserviceable", certOfConformance: "COC-GE-2025-0022", shelfLife: "2026-08-30", unitCost: 18500 },
-  { id: 6, partNumber: "PN-4410-F", description: "Fuel Filter Element", category: "Consumable", manufacturer: "Pall Aerospace", serialNumber: "", batchNumber: "BT-2025-040", quantity: 45, reorderPoint: 20, location: "Warehouse A", condition: "New", certOfConformance: "COC-PA-2025-0040", shelfLife: "2026-04-01", unitCost: 320 },
-  { id: 7, partNumber: "PN-9901-G", description: "Wing Skin Panel (Repair)", category: "Airframe", manufacturer: "Boeing", serialNumber: "SN-WS-11002", batchNumber: "BT-2024-100", quantity: 1, reorderPoint: 1, location: "Quarantine Bay", condition: "Quarantined", certOfConformance: "", shelfLife: "", unitCost: 67000 },
-  { id: 8, partNumber: "PN-2255-H", description: "AN3-5A Bolt", category: "Hardware", manufacturer: "SPS Technologies", serialNumber: "", batchNumber: "BT-2025-060", quantity: 500, reorderPoint: 200, location: "Warehouse A", condition: "New", certOfConformance: "COC-SPS-2025-0060", shelfLife: "", unitCost: 1.5 },
-];
-
-const seedTransactions = [
-  { id: 1, partId: 1, type: "IN", quantity: 12, date: "2025-01-15T09:30:00", reference: "PO-2025-001", note: "Initial stock receipt", userId: 2 },
-  { id: 2, partId: 2, type: "IN", quantity: 5, date: "2025-01-20T14:00:00", reference: "PO-2025-003", note: "Replenishment order", userId: 2 },
-  { id: 3, partId: 2, type: "OUT", quantity: 2, date: "2025-02-05T10:15:00", reference: "WO-A320-044", note: "Issued to A320 C-Check", userId: 2 },
-  { id: 4, partId: 6, type: "IN", quantity: 50, date: "2025-02-10T08:00:00", reference: "PO-2025-010", note: "Bulk consumable receipt", userId: 2 },
-  { id: 5, partId: 6, type: "OUT", quantity: 5, date: "2025-02-14T16:30:00", reference: "WO-B737-012", note: "Issued to 737 A-Check", userId: 2 },
-  { id: 6, partId: 5, type: "OUT", quantity: 3, date: "2025-02-01T11:00:00", reference: "WO-A330-007", note: "Issued — found unserviceable", userId: 1 },
-];
 
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
@@ -180,11 +155,24 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const user = USERS_DB.find(u => u.username === username && u.password === password);
-    if (user) onLogin(user);
-    else setError("Invalid credentials");
+    setError("");
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onLogin(data);
+      } else {
+        setError(data.error || "Invalid credentials");
+      }
+    } catch (err) {
+      setError("Server error");
+    }
   }
 
   return (
@@ -448,14 +436,33 @@ function PartsCatalog({ parts, setParts, addAudit }) {
     });
   }, [parts, search, filterCat, filterLoc, filterStatus]);
 
-  function handleSave(form) {
+  async function handleSave(form) {
     if (editing) {
-      setParts(prev => prev.map(p => p.id === editing.id ? { ...editing, ...form } : p));
-      addAudit(`Updated part ${form.partNumber}`);
+      try {
+        const res = await fetch(`/api/parts/${editing.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        if (res.ok) {
+          const updatedPart = await res.json();
+          setParts(prev => prev.map(p => p.id === updatedPart.id ? updatedPart : p));
+          addAudit(`Updated part ${form.partNumber}`);
+        }
+      } catch (err) { console.error(err); }
     } else {
-      const newPart = { ...form, id: generateId(parts) };
-      setParts(prev => [...prev, newPart]);
-      addAudit(`Added new part ${form.partNumber}`);
+      try {
+        const res = await fetch('/api/parts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        if (res.ok) {
+          const newPart = await res.json();
+          setParts(prev => [...prev, newPart]);
+          addAudit(`Added new part ${form.partNumber}`);
+        }
+      } catch (err) { console.error(err); }
     }
     setShowForm(false);
     setEditing(null);
@@ -573,7 +580,7 @@ function StockMovements({ parts, setParts, transactions, setTransactions, addAud
     return list;
   }, [transactions, filterType]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const partId = parseInt(form.partId);
     const qty = parseInt(form.quantity);
@@ -581,11 +588,21 @@ function StockMovements({ parts, setParts, transactions, setTransactions, addAud
     if (!part) return;
     if (form.type === "OUT" && qty > part.quantity) { alert("Insufficient stock"); return; }
 
-    setParts(prev => prev.map(p => p.id === partId ? { ...p, quantity: form.type === "IN" ? p.quantity + qty : p.quantity - qty } : p));
-    setTransactions(prev => [...prev, { id: generateId(prev), partId, type: form.type, quantity: qty, date: new Date().toISOString(), reference: form.reference, note: form.note, userId: user.id }]);
-    addAudit(`${form.type === "IN" ? "Received" : "Issued"} ${qty}× ${part.partNumber} — Ref: ${form.reference}`);
-    setShowForm(false);
-    setForm({ partId: "", type: "IN", quantity: 1, reference: "", note: "" });
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partId, type: form.type, quantity: qty, reference: form.reference, note: form.note, userId: user.id })
+      });
+      if (res.ok) {
+        const tx = await res.json();
+        setParts(prev => prev.map(p => p.id === partId ? { ...p, quantity: form.type === "IN" ? p.quantity + qty : p.quantity - qty } : p));
+        setTransactions(prev => [tx, ...prev]);
+        addAudit(`${form.type === "IN" ? "Received" : "Issued"} ${qty}× ${part.partNumber} — Ref: ${form.reference}`);
+        setShowForm(false);
+        setForm({ partId: "", type: "IN", quantity: 1, reference: "", note: "" });
+      }
+    } catch (err) { console.error(err); }
   }
 
   return (
@@ -608,7 +625,6 @@ function StockMovements({ parts, setParts, transactions, setTransactions, addAud
               <tr><td colSpan={7} style={{ ...S.td, textAlign: "center", color: theme.textDim, padding: 32 }}>No movements recorded</td></tr>
             ) : sorted.map(t => {
               const part = parts.find(p => p.id === t.partId);
-              const usr = USERS_DB.find(u => u.id === t.userId);
               return (
                 <tr key={t.id}>
                   <td style={S.td}>{fmtDateTime(t.date)}</td>
@@ -617,7 +633,7 @@ function StockMovements({ parts, setParts, transactions, setTransactions, addAud
                   <td style={S.td}><strong>{t.quantity}</strong></td>
                   <td style={S.td}>{t.reference || "—"}</td>
                   <td style={S.td}><span style={{ color: theme.textMuted }}>{t.note || "—"}</span></td>
-                  <td style={S.td}>{usr?.name || "System"}</td>
+                  <td style={S.td}>{t.userName || "System"}</td>
                 </tr>
               );
             })}
@@ -880,21 +896,64 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [parts, setParts] = useState(seedParts);
-  const [transactions, setTransactions] = useState(seedTransactions);
-  const [auditLog, setAuditLog] = useState([
-    { date: "2025-01-15T09:30:00", userName: "Jane Martinez", userRole: ROLES.CONTROLLER, action: "Received 12× PN-7201-A — Ref: PO-2025-001" },
-    { date: "2025-01-20T14:00:00", userName: "Jane Martinez", userRole: ROLES.CONTROLLER, action: "Received 5× PN-3305-C — Ref: PO-2025-003" },
-    { date: "2025-02-01T11:00:00", userName: "Admin User", userRole: ROLES.ADMIN, action: "Issued 3× PN-8820-E — Ref: WO-A330-007" },
-  ]);
+  const [parts, setParts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  function addAudit(action) {
-    setAuditLog(prev => [...prev, { date: new Date().toISOString(), userName: user.name, userRole: user.role, action }]);
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const partsRes = await fetch('/api/parts');
+      const partsData = await partsRes.json();
+      setParts(partsData);
+
+      const txRes = await fetch('/api/transactions');
+      const txData = await txRes.json();
+      setTransactions(txData);
+
+      const auditRes = await fetch('/api/audit');
+      const auditData = await auditRes.json();
+      setAuditLog(auditData);
+    } catch (err) {
+      console.error("Failed to load data", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleLogin(u) {
+  async function addAudit(action) {
+    try {
+      await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, userId: user.id })
+      });
+      // Refresh audit log
+      const res = await fetch('/api/audit');
+      const data = await res.json();
+      setAuditLog(data);
+    } catch (err) {
+      console.error("Failed to add audit log", err);
+    }
+  }
+
+  async function handleLogin(u) {
+    // In a real app, u comes from the LoginScreen which should fetch from API
+    // We will update LoginScreen to do the fetch, but here we just set user.
+    // Actually, let's update LoginScreen to pass the full user object from API.
     setUser(u);
-    setAuditLog(prev => [...prev, { date: new Date().toISOString(), userName: u.name, userRole: u.role, action: "Logged in" }]);
+    await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: "Logged in", userId: u.id })
+    });
   }
 
   function handleLogout() {
@@ -902,6 +961,9 @@ export default function App() {
     setUser(null);
     setPage("dashboard");
     setIsSidebarOpen(false);
+    setParts([]);
+    setTransactions([]);
+    setAuditLog([]);
   }
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;

@@ -1,0 +1,231 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const db = require('./db');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// API Endpoints
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const result = await db.query(
+            'SELECT * FROM users WHERE username = $1 AND password = $2',
+            [username, password]
+        );
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            // In a real app, use JWT or sessions. Sending back user info for this demo.
+            res.json({ id: user.id, username: user.username, name: user.name, role: user.role });
+        } else {
+            res.status(401).json({ error: 'Invalid credentials' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get all parts
+app.get('/api/parts', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM parts ORDER BY id ASC');
+        res.json(result.rows.map(row => ({
+            ...row,
+            partNumber: row.part_number,
+            serialNumber: row.serial_number,
+            batchNumber: row.batch_number,
+            reorderPoint: row.reorder_point,
+            certOfConformance: row.cert_of_conformance,
+            shelfLife: row.shelf_life,
+            unitCost: parseFloat(row.unit_cost)
+        })));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add new part
+app.post('/api/parts', async (req, res) => {
+    const { partNumber, description, category, manufacturer, serialNumber, batchNumber, quantity, reorderPoint, location, condition, certOfConformance, shelfLife, unitCost } = req.body;
+    try {
+        const result = await db.query(
+            `INSERT INTO parts (part_number, description, category, manufacturer, serial_number, batch_number, quantity, reorder_point, location, condition, cert_of_conformance, shelf_life, unit_cost)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING *`,
+            [partNumber, description, category, manufacturer, serialNumber, batchNumber, quantity, reorderPoint, location, condition, certOfConformance, shelfLife || null, unitCost]
+        );
+        const row = result.rows[0];
+        res.json({
+            ...row,
+            partNumber: row.part_number,
+            serialNumber: row.serial_number,
+            batchNumber: row.batch_number,
+            reorderPoint: row.reorder_point,
+            certOfConformance: row.cert_of_conformance,
+            shelfLife: row.shelf_life,
+            unitCost: parseFloat(row.unit_cost)
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update part
+app.put('/api/parts/:id', async (req, res) => {
+    const { id } = req.params;
+    const { partNumber, description, category, manufacturer, serialNumber, batchNumber, quantity, reorderPoint, location, condition, certOfConformance, shelfLife, unitCost } = req.body;
+
+    try {
+        const result = await db.query(
+            `UPDATE parts SET 
+       part_number = $1, description = $2, category = $3, manufacturer = $4, serial_number = $5, batch_number = $6, quantity = $7, reorder_point = $8, location = $9, condition = $10, cert_of_conformance = $11, shelf_life = $12, unit_cost = $13
+       WHERE id = $14
+       RETURNING *`,
+            [partNumber, description, category, manufacturer, serialNumber, batchNumber, quantity, reorderPoint, location, condition, certOfConformance, shelfLife || null, unitCost, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Part not found' });
+        }
+
+        const row = result.rows[0];
+        res.json({
+            ...row,
+            partNumber: row.part_number,
+            serialNumber: row.serial_number,
+            batchNumber: row.batch_number,
+            reorderPoint: row.reorder_point,
+            certOfConformance: row.cert_of_conformance,
+            shelfLife: row.shelf_life,
+            unitCost: parseFloat(row.unit_cost)
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get transactions
+app.get('/api/transactions', async (req, res) => {
+    try {
+        const result = await db.query(`
+      SELECT t.*, u.name as user_name 
+      FROM transactions t 
+      LEFT JOIN users u ON t.user_id = u.id 
+      ORDER BY t.date DESC
+    `);
+        res.json(result.rows.map(row => ({
+            ...row,
+            partId: row.part_id,
+            userId: row.user_id,
+            userName: row.user_name
+        })));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add transaction (and update part quantity)
+app.post('/api/transactions', async (req, res) => {
+    const { partId, type, quantity, reference, note, userId } = req.body;
+
+    const client = await db.pool ? await db.pool.connect() : { query: db.query, release: () => { } }; // Handle if db is pool or client wrapper
+
+    try {
+        // Start transaction
+        await client.query('BEGIN');
+
+        // 1. Record transaction
+        const txResult = await client.query(
+            `INSERT INTO transactions (part_id, type, quantity, reference, note, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+            [partId, type, quantity, reference, note, userId]
+        );
+
+        // 2. Update part quantity
+        const operator = type === 'IN' ? '+' : '-';
+        await client.query(
+            `UPDATE parts SET quantity = quantity ${operator} $1 WHERE id = $2`,
+            [quantity, partId]
+        );
+
+        await client.query('COMMIT');
+
+        // Fetch user name for response
+        const userRes = await client.query('SELECT name FROM users WHERE id = $1', [userId]);
+        const userName = userRes.rows[0]?.name;
+
+        const row = txResult.rows[0];
+        res.json({
+            ...row,
+            partId: row.part_id,
+            userId: row.user_id,
+            userName
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    } finally {
+        if (client.release) client.release();
+    }
+});
+
+
+// Get audit logs
+app.get('/api/audit', async (req, res) => {
+    try {
+        const result = await db.query(`
+      SELECT a.*, u.name as user_name, u.role as user_role 
+      FROM audit_logs a 
+      JOIN users u ON a.user_id = u.id 
+      ORDER BY a.date DESC
+    `);
+        res.json(result.rows.map(row => ({
+            date: row.date,
+            action: row.action,
+            userName: row.user_name,
+            userRole: row.user_role
+        })));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add audit log
+app.post('/api/audit', async (req, res) => {
+    const { action, userId } = req.body;
+    try {
+        await db.query('INSERT INTO audit_logs (action, user_id) VALUES ($1, $2)', [action, userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Serve React App in Production
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../dist')));
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../dist/index.html'));
+    });
+}
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
