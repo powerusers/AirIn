@@ -131,7 +131,8 @@ const S = {
     width: "100%",
     outline: "none",
     transition: "border-color .15s",
-    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    boxSizing: "border-box"
   },
   select: {
     background: theme.surface,
@@ -142,7 +143,8 @@ const S = {
     fontSize: 14,
     width: "100%",
     outline: "none",
-    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    boxSizing: "border-box"
   },
   btn: {
     display: "inline-flex",
@@ -591,6 +593,7 @@ function PartForm({ part, onSave, onCancel }) {
 // ─── Parts Catalog ────────────────────────────────────────────────────────────
 function PartsCatalog({ parts, setParts, addAudit }) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const canEdit = user.role !== ROLES.VIEWER;
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
@@ -655,18 +658,18 @@ function PartsCatalog({ parts, setParts, addAudit }) {
         )}
       </div>
 
-      <div style={{ ...S.card, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: "1 1 240px" }}>
+      <div style={{ ...S.card, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, padding: 24 }}>
+        <div style={{ position: "relative", gridColumn: "1 / -1" }}>
           <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: theme.textDim }}>{Icons.search({ size: 16 })}</span>
-          <input style={{ ...S.input, paddingLeft: 34 }} placeholder="Search part #, description, serial, manufacturer…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input style={{ ...S.input, paddingLeft: 34, width: "100%" }} placeholder="Search part #, description, serial, manufacturer…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select style={{ ...S.select, width: "auto", minWidth: 140 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+        <select style={{ ...S.select, width: "100%" }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
           <option value="">All Categories</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}
         </select>
-        <select style={{ ...S.select, width: "auto", minWidth: 140 }} value={filterLoc} onChange={e => setFilterLoc(e.target.value)}>
+        <select style={{ ...S.select, width: "100%" }} value={filterLoc} onChange={e => setFilterLoc(e.target.value)}>
           <option value="">All Locations</option>{LOCATIONS.map(l => <option key={l}>{l}</option>)}
         </select>
-        <select style={{ ...S.select, width: "auto", minWidth: 140 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select style={{ ...S.select, width: "100%" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">All Status</option><option>In Stock</option><option>Low</option><option>Out of Stock</option>
         </select>
       </div>
@@ -1006,10 +1009,10 @@ function Traceability({ parts }) {
   return (
     <div>
       <h1 style={{ margin: "0 0 24px", fontSize: 24, fontWeight: 700 }}>Traceability</h1>
-      <div style={{ ...S.card, display: "flex", gap: 12, alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1 }}>
+      <div style={{ ...S.card }}>
+        <div style={{ position: "relative", width: "100%" }}>
           <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: theme.textDim }}>{Icons.search({ size: 16 })}</span>
-          <input style={{ ...S.input, paddingLeft: 34 }} placeholder="Search by part #, serial #, batch #, or COC…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input style={{ ...S.input, paddingLeft: 34, width: "100%" }} placeholder="Search by part #, serial #, batch #, or COC…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
       <div style={S.card}>
