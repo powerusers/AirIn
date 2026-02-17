@@ -38,35 +38,201 @@ function useIsMobile() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const theme = {
-  bg: "#0f172a", surface: "#1e293b", surfaceHover: "#334155", border: "#334155",
-  text: "#e2e8f0", textMuted: "#94a3b8", textDim: "#64748b",
-  primary: "#3b82f6", primaryHover: "#2563eb", primaryLight: "#1e3a5f",
-  accent: "#f59e0b", danger: "#ef4444", dangerHover: "#dc2626",
-  success: "#22c55e", purple: "#a855f7",
-  radius: "8px", radiusLg: "12px",
+  bg: "#f8fafc",        // Slate 50
+  surface: "#ffffff",   // White
+  surfaceHover: "#f1f5f9", // Slate 100
+  border: "#e2e8f0",    // Slate 200
+  text: "#0f172a",      // Slate 900
+  textMuted: "#64748b", // Slate 500
+  textDim: "#94a3b8",   // Slate 400
+  primary: "#2563eb",   // Blue 600
+  primaryHover: "#1d4ed8", // Blue 700
+  primaryLight: "#eff6ff", // Blue 50
+  accent: "#f59e0b",    // Amber 500
+  danger: "#ef4444",    // Red 500
+  dangerHover: "#dc2626", // Red 600
+  success: "#10b981",   // Emerald 500
+  radius: "6px",        // Crisper radius
+  shadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+  shadowLg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
 };
 
 const S = {
-  app: { minHeight: "100vh", background: theme.bg, color: theme.text, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 14 },
-  loginWrap: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: `linear-gradient(135deg, ${theme.bg} 0%, #1a1a2e 100%)` },
-  loginBox: { background: theme.surface, borderRadius: theme.radiusLg, padding: 40, width: 380, boxShadow: "0 25px 50px rgba(0,0,0,.4)" },
-  sidebar: { width: 240, background: theme.surface, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 10, transition: "transform 0.3s ease" },
-  mobileNav: { height: 60, background: theme.surface, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", position: "fixed", top: 0, left: 0, right: 0, zIndex: 20 },
-  main: { transition: "margin-left 0.3s ease", padding: "24px 32px", minHeight: "100vh" },
-  card: { background: theme.surface, borderRadius: theme.radiusLg, border: `1px solid ${theme.border}`, padding: 24, marginBottom: 16, overflowX: "auto" },
-  input: { background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: theme.radius, color: theme.text, padding: "8px 12px", fontSize: 14, width: "100%", outline: "none", boxSizing: "border-box" },
-  select: { background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: theme.radius, color: theme.text, padding: "8px 12px", fontSize: 14, width: "100%", outline: "none", boxSizing: "border-box" },
-  btn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: theme.radius, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, transition: "background .15s" },
-  btnPrimary: { background: theme.primary, color: "#fff" },
-  btnDanger: { background: theme.danger, color: "#fff" },
-  btnGhost: { background: "transparent", color: theme.textMuted, border: `1px solid ${theme.border}` },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { textAlign: "left", padding: "10px 12px", borderBottom: `2px solid ${theme.border}`, color: theme.textMuted, fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px" },
-  td: { padding: "10px 12px", borderBottom: `1px solid ${theme.border}` },
-  badge: { display: "inline-block", padding: "2px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 },
-  modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 },
-  modalContent: { background: theme.surface, borderRadius: theme.radiusLg, padding: 32, width: 520, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 25px 50px rgba(0,0,0,.5)" },
-  statCard: { background: theme.surface, borderRadius: theme.radiusLg, border: `1px solid ${theme.border}`, padding: "20px 24px", flex: 1, minWidth: 180 },
+  app: {
+    minHeight: "100vh",
+    background: theme.bg,
+    color: theme.text,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontSize: 14,
+    lineHeight: 1.5,
+  },
+  loginWrap: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    background: "#f1f5f9"
+  },
+  loginBox: {
+    background: theme.surface,
+    borderRadius: theme.radius,
+    padding: 40,
+    width: 380,
+    boxShadow: theme.shadowLg,
+    border: `1px solid ${theme.border}`
+  },
+  sidebar: {
+    width: 240,
+    background: "#0f172a", // Dark sidebar for contrast
+    color: "#f8fafc",
+    display: "flex",
+    flexDirection: "column",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 10,
+    transition: "transform 0.3s ease"
+  },
+  mobileNav: {
+    height: 60,
+    background: theme.surface,
+    borderBottom: `1px solid ${theme.border}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 16px",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20
+  },
+  main: {
+    transition: "margin-left 0.3s ease",
+    padding: "32px 40px",
+    minHeight: "100vh"
+  },
+  card: {
+    background: theme.surface,
+    borderRadius: theme.radius,
+    border: `1px solid ${theme.border}`,
+    padding: 24,
+    marginBottom: 24,
+    boxShadow: theme.shadow
+  },
+  input: {
+    background: theme.surface,
+    border: `1px solid ${theme.border}`,
+    borderRadius: theme.radius,
+    color: theme.text,
+    padding: "8px 12px",
+    fontSize: 14,
+    width: "100%",
+    outline: "none",
+    transition: "border-color .15s",
+    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+  },
+  select: {
+    background: theme.surface,
+    border: `1px solid ${theme.border}`,
+    borderRadius: theme.radius,
+    color: theme.text,
+    padding: "8px 12px",
+    fontSize: 14,
+    width: "100%",
+    outline: "none",
+    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+  },
+  btn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 16px",
+    borderRadius: theme.radius,
+    border: "none",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 500,
+    transition: "all .15s",
+    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+  },
+  btnPrimary: {
+    background: theme.primary,
+    color: "#fff"
+  },
+  btnDanger: {
+    background: theme.surface,
+    color: theme.danger,
+    border: `1px solid ${theme.border}`
+  },
+  btnGhost: {
+    background: "transparent",
+    color: theme.textMuted,
+    boxShadow: "none"
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    fontSize: 13
+  },
+  th: {
+    textAlign: "left",
+    padding: "12px 16px",
+    borderBottom: `1px solid ${theme.border}`,
+    background: theme.surfaceHover,
+    color: theme.textMuted,
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    firstChild: { borderTopLeftRadius: theme.radius },
+    lastChild: { borderTopRightRadius: theme.radius }
+  },
+  td: {
+    padding: "12px 16px",
+    borderBottom: `1px solid ${theme.border}`,
+    color: theme.text,
+    verticalAlign: "middle"
+  },
+  badge: {
+    display: "inline-block",
+    padding: "2px 8px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 600,
+    border: "1px solid transparent"
+  },
+  modal: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,.4)",
+    backdropFilter: "blur(2px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 100
+  },
+  modalContent: {
+    background: theme.surface,
+    borderRadius: theme.radius,
+    padding: 32,
+    width: 520,
+    maxHeight: "85vh",
+    overflowY: "auto",
+    boxShadow: theme.shadowLg,
+    border: `1px solid ${theme.border}`
+  },
+  statCard: {
+    background: theme.surface,
+    borderRadius: theme.radius,
+    border: `1px solid ${theme.border}`,
+    padding: "24px",
+    flex: 1,
+    minWidth: 200,
+    boxShadow: theme.shadow
+  },
 };
 
 // ─── Icons (inline SVG) ──────────────────────────────────────────────────────
@@ -219,7 +385,6 @@ function Sidebar({ active, onNav, isOpen, onClose }) {
     ...S.sidebar,
     transform: isMobile && !isOpen ? "translateX(-100%)" : "translateX(0)",
     boxShadow: isMobile && isOpen ? "20px 0 50px rgba(0,0,0,0.5)" : "none",
-    width: 240,
   };
 
   const handleNav = (key) => {
@@ -231,38 +396,44 @@ function Sidebar({ active, onNav, isOpen, onClose }) {
     <>
       {isMobile && isOpen && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9 }} />}
       <div style={sidebarStyle}>
-        <div style={{ padding: "20px 16px", borderBottom: `1px solid ${theme.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {Icons.plane({ size: 18, color: theme.primary })}
+        <div style={{ padding: "24px 20px", borderBottom: `1px solid #1e293b` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 6, background: theme.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {Icons.plane({ size: 18, color: "white" })}
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>AeroParts</div>
-              <div style={{ fontSize: 11, color: theme.textDim }}>Inventory Management</div>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>AeroParts</div>
+              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>Inventory System</div>
             </div>
           </div>
         </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {NAV.map(n => (
-            <button key={n.key} onClick={() => handleNav(n.key)} style={{
-              ...S.btn, width: "100%", justifyContent: "flex-start", padding: "10px 12px", marginBottom: 2,
-              background: active === n.key ? theme.primaryLight : "transparent",
-              color: active === n.key ? theme.primary : theme.textMuted,
-            }}>
-              {n.icon({ size: 18 })} {n.label}
-            </button>
-          ))}
+        <nav style={{ flex: 1, padding: "16px 12px" }}>
+          {NAV.map(n => {
+            const isActive = active === n.key;
+            return (
+              <button key={n.key} onClick={() => handleNav(n.key)} style={{
+                ...S.btn, width: "100%", justifyContent: "flex-start", padding: "10px 12px", marginBottom: 4,
+                background: isActive ? "#1e293b" : "transparent",
+                color: isActive ? "#fff" : "#94a3b8",
+                boxShadow: "none",
+                fontSize: 14
+              }}>
+                {n.icon({ size: 18, color: isActive ? "#38bdf8" : "currentColor" })}
+                <span style={{ marginLeft: 3 }}>{n.label}</span>
+              </button>
+            );
+          })}
         </nav>
-        <div style={{ padding: 12, borderTop: `1px solid ${theme.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: theme.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
-              {user.name.charAt(0)}
+        <div style={{ padding: 16, borderTop: `1px solid #1e293b` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              {user?.name?.charAt(0) || "U"}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
-              <div style={{ fontSize: 11, color: theme.textDim }}>{user.role}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name || "User"}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{user?.role || "Viewer"}</div>
             </div>
-            <button onClick={logout} title="Log out" style={{ ...S.btn, padding: 4, background: "transparent", color: theme.textDim }}>{Icons.logout({ size: 16 })}</button>
+            <button onClick={logout} title="Log out" style={{ ...S.btn, padding: 6, background: "transparent", color: "#94a3b8", boxShadow: "none" }}>{Icons.logout({ size: 16 })}</button>
           </div>
         </div>
       </div>
@@ -313,11 +484,16 @@ function Dashboard({ parts, transactions }) {
   return (
     <div>
       <h1 style={{ margin: "0 0 24px", fontSize: 24, fontWeight: 700 }}>Dashboard</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24, marginBottom: 32 }}>
         {stats.map((s, i) => (
-          <div key={i} style={{ ...S.statCard, borderLeft: `3px solid ${s.color}` }}>
-            <div style={{ fontSize: 12, color: theme.textMuted, marginBottom: 4, textTransform: "uppercase", fontWeight: 600, letterSpacing: ".5px" }}>{s.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</div>
+          <div key={i} style={{ ...S.statCard, borderLeft: `4px solid ${s.color}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, color: theme.textMuted, marginBottom: 8, textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.05em" }}>{s.label}</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: theme.text, letterSpacing: "-0.02em" }}>{s.value}</div>
+            </div>
+            <div style={{ width: 48, height: 48, borderRadius: 8, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color }}>
+              {s.icon({ size: 24 })}
+            </div>
           </div>
         ))}
       </div>
