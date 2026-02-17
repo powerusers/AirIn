@@ -229,6 +229,13 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+import { ensureDb } from './ensureDb.js';
+
+// Start server after DB check
+ensureDb().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}).catch(err => {
+    console.error('Failed to start server:', err);
 });
