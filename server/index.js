@@ -1,8 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const db = require('./db');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import db from './db.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,7 +28,6 @@ app.post('/api/auth/login', async (req, res) => {
         );
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            // In a real app, use JWT or sessions. Sending back user info for this demo.
             res.json({ id: user.id, username: user.username, name: user.name, role: user.role });
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
@@ -140,10 +145,9 @@ app.get('/api/transactions', async (req, res) => {
 app.post('/api/transactions', async (req, res) => {
     const { partId, type, quantity, reference, note, userId } = req.body;
 
-    const client = await db.pool ? await db.pool.connect() : { query: db.query, release: () => { } }; // Handle if db is pool or client wrapper
+    const client = await db.pool ? await db.pool.connect() : { query: db.query, release: () => { } };
 
     try {
-        // Start transaction
         await client.query('BEGIN');
 
         // 1. Record transaction
@@ -182,7 +186,6 @@ app.post('/api/transactions', async (req, res) => {
         if (client.release) client.release();
     }
 });
-
 
 // Get audit logs
 app.get('/api/audit', async (req, res) => {
