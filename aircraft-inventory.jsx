@@ -51,6 +51,16 @@ function daysUntilExpiry(d) { if (!d) return null; return Math.ceil((new Date(d)
 
 function generateId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const theme = {
   bg: "#0f172a", surface: "#1e293b", surfaceHover: "#334155", border: "#334155",
@@ -65,9 +75,10 @@ const S = {
   app: { minHeight: "100vh", background: theme.bg, color: theme.text, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 14 },
   loginWrap: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: `linear-gradient(135deg, ${theme.bg} 0%, #1a1a2e 100%)` },
   loginBox: { background: theme.surface, borderRadius: theme.radiusLg, padding: 40, width: 380, boxShadow: "0 25px 50px rgba(0,0,0,.4)" },
-  sidebar: { width: 240, background: theme.surface, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 10 },
-  main: { marginLeft: 240, padding: "24px 32px", minHeight: "100vh" },
-  card: { background: theme.surface, borderRadius: theme.radiusLg, border: `1px solid ${theme.border}`, padding: 24, marginBottom: 16 },
+  sidebar: { width: 240, background: theme.surface, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 10, transition: "transform 0.3s ease" },
+  mobileNav: { height: 60, background: theme.surface, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", position: "fixed", top: 0, left: 0, right: 0, zIndex: 20 },
+  main: { transition: "margin-left 0.3s ease", padding: "24px 32px", minHeight: "100vh" },
+  card: { background: theme.surface, borderRadius: theme.radiusLg, border: `1px solid ${theme.border}`, padding: 24, marginBottom: 16, overflowX: "auto" },
   input: { background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: theme.radius, color: theme.text, padding: "8px 12px", fontSize: 14, width: "100%", outline: "none", boxSizing: "border-box" },
   select: { background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: theme.radius, color: theme.text, padding: "8px 12px", fontSize: 14, width: "100%", outline: "none", boxSizing: "border-box" },
   btn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: theme.radius, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, transition: "background .15s" },
@@ -104,6 +115,7 @@ const Icons = {
   check: (p) => <Icon {...p} d="M20 6L9 17l-5-5" />,
   logout: (p) => <Icon {...p} d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />,
   clock: (p) => <Icon {...p} d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2" />,
+  menu: (p) => <Icon {...p} d="M3 12h18M3 6h18M3 18h18" />,
 };
 
 // ─── Components ───────────────────────────────────────────────────────────────
@@ -134,13 +146,15 @@ function FormField({ label, children, required }) {
 }
 
 function FormRow({ children }) {
-  return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{children}</div>;
+  const isMobile = useIsMobile();
+  return <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>{children}</div>;
 }
 
 function Modal({ title, onClose, children }) {
+  const isMobile = useIsMobile();
   return (
     <div style={S.modal} onClick={onClose}>
-      <div style={S.modalContent} onClick={e => e.stopPropagation()}>
+      <div style={{ ...S.modalContent, width: isMobile ? "95%" : 520, padding: isMobile ? 20 : 32 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
           <button onClick={onClose} style={{ ...S.btn, padding: 4, background: "transparent", color: theme.textMuted }}>{Icons.x()}</button>
@@ -175,7 +189,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={S.loginWrap}>
-      <div style={S.loginBox}>
+      <div style={{ ...S.loginBox, width: "min(380px, 90%)", padding: 32 }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 56, height: 56, borderRadius: "50%", background: theme.primaryLight, marginBottom: 12 }}>
             {Icons.plane({ size: 28, color: theme.primary })}
@@ -190,7 +204,7 @@ function LoginScreen({ onLogin }) {
           <button type="submit" style={{ ...S.btn, ...S.btnPrimary, width: "100%", justifyContent: "center", padding: "10px 0", marginTop: 4 }}>Sign In</button>
         </form>
         <div style={{ marginTop: 20, padding: 14, background: theme.bg, borderRadius: theme.radius, fontSize: 12, color: theme.textDim }}>
-          <strong style={{ color: theme.textMuted }}>Demo accounts:</strong><br/>
+          <strong style={{ color: theme.textMuted }}>Demo accounts:</strong><br />
           admin / admin (Admin) &nbsp;·&nbsp; controller / ctrl1 (Stock Controller) &nbsp;·&nbsp; viewer / view1 (Viewer)
         </div>
       </div>
@@ -209,44 +223,77 @@ const NAV = [
   { key: "audit", label: "Audit Log", icon: Icons.clock },
 ];
 
-function Sidebar({ active, onNav }) {
+function Sidebar({ active, onNav, isOpen, onClose }) {
   const { user, logout } = useAuth();
+  const isMobile = useIsMobile();
+
+  const sidebarStyle = {
+    ...S.sidebar,
+    transform: isMobile && !isOpen ? "translateX(-100%)" : "translateX(0)",
+    boxShadow: isMobile && isOpen ? "20px 0 50px rgba(0,0,0,0.5)" : "none",
+    width: 240,
+  };
+
+  const handleNav = (key) => {
+    onNav(key);
+    if (isMobile) onClose();
+  };
+
   return (
-    <div style={S.sidebar}>
-      <div style={{ padding: "20px 16px", borderBottom: `1px solid ${theme.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {Icons.plane({ size: 18, color: theme.primary })}
+    <>
+      {isMobile && isOpen && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9 }} />}
+      <div style={sidebarStyle}>
+        <div style={{ padding: "20px 16px", borderBottom: `1px solid ${theme.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {Icons.plane({ size: 18, color: theme.primary })}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>AeroParts</div>
+              <div style={{ fontSize: 11, color: theme.textDim }}>Inventory Management</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>AeroParts</div>
-            <div style={{ fontSize: 11, color: theme.textDim }}>Inventory Management</div>
+        </div>
+        <nav style={{ flex: 1, padding: "12px 8px" }}>
+          {NAV.map(n => (
+            <button key={n.key} onClick={() => handleNav(n.key)} style={{
+              ...S.btn, width: "100%", justifyContent: "flex-start", padding: "10px 12px", marginBottom: 2,
+              background: active === n.key ? theme.primaryLight : "transparent",
+              color: active === n.key ? theme.primary : theme.textMuted,
+            }}>
+              {n.icon({ size: 18 })} {n.label}
+            </button>
+          ))}
+        </nav>
+        <div style={{ padding: 12, borderTop: `1px solid ${theme.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: theme.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              {user.name.charAt(0)}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: theme.textDim }}>{user.role}</div>
+            </div>
+            <button onClick={logout} title="Log out" style={{ ...S.btn, padding: 4, background: "transparent", color: theme.textDim }}>{Icons.logout({ size: 16 })}</button>
           </div>
         </div>
       </div>
-      <nav style={{ flex: 1, padding: "12px 8px" }}>
-        {NAV.map(n => (
-          <button key={n.key} onClick={() => onNav(n.key)} style={{
-            ...S.btn, width: "100%", justifyContent: "flex-start", padding: "10px 12px", marginBottom: 2,
-            background: active === n.key ? theme.primaryLight : "transparent",
-            color: active === n.key ? theme.primary : theme.textMuted,
-          }}>
-            {n.icon({ size: 18 })} {n.label}
-          </button>
-        ))}
-      </nav>
-      <div style={{ padding: 12, borderTop: `1px solid ${theme.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: theme.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
-            {user.name.charAt(0)}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
-            <div style={{ fontSize: 11, color: theme.textDim }}>{user.role}</div>
-          </div>
-          <button onClick={logout} title="Log out" style={{ ...S.btn, padding: 4, background: "transparent", color: theme.textDim }}>{Icons.logout({ size: 16 })}</button>
+    </>
+  );
+}
+
+function MobileNav({ onMenuClick }) {
+  return (
+    <div style={S.mobileNav}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: theme.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {Icons.plane({ size: 16, color: theme.primary })}
         </div>
+        <span style={{ fontWeight: 700 }}>AeroParts</span>
       </div>
+      <button onClick={onMenuClick} style={{ ...S.btn, ...S.btnGhost, padding: 8 }}>
+        {Icons.menu({ size: 24 })}
+      </button>
     </div>
   );
 }
@@ -273,10 +320,12 @@ function Dashboard({ parts, transactions }) {
     { label: "Out of Stock", value: outOfStock, color: theme.danger, icon: Icons.alert },
   ];
 
+  const isMobile = useIsMobile();
+
   return (
     <div>
       <h1 style={{ margin: "0 0 24px", fontSize: 24, fontWeight: 700 }}>Dashboard</h1>
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
         {stats.map((s, i) => (
           <div key={i} style={{ ...S.statCard, borderLeft: `3px solid ${s.color}` }}>
             <div style={{ fontSize: 12, color: theme.textMuted, marginBottom: 4, textTransform: "uppercase", fontWeight: 600, letterSpacing: ".5px" }}>{s.label}</div>
@@ -286,14 +335,14 @@ function Dashboard({ parts, transactions }) {
       </div>
 
       {(expiringSoon > 0 || expired > 0 || quarantined > 0) && (
-        <div style={{ ...S.card, borderLeft: `3px solid ${theme.accent}`, marginBottom: 24, display: "flex", gap: 24 }}>
+        <div style={{ ...S.card, borderLeft: `3px solid ${theme.accent}`, marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 24 }}>
           {expired > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8 }}>{Icons.alert({ size: 18, color: theme.danger })}<span><strong style={{ color: theme.danger }}>{expired}</strong> expired part(s)</span></div>}
           {expiringSoon > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8 }}>{Icons.clock({ size: 18, color: theme.accent })}<span><strong style={{ color: theme.accent }}>{expiringSoon}</strong> expiring within 90 days</span></div>}
           {quarantined > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8 }}>{Icons.shield({ size: 18, color: theme.purple })}<span><strong style={{ color: theme.purple }}>{quarantined}</strong> quarantined</span></div>}
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <div style={S.card}>
           <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 600 }}>Critical Stock Items</h3>
           {criticalParts.length === 0 ? <EmptyState icon={Icons.check({ size: 32, color: theme.success })} message="All parts above reorder points" /> : (
@@ -827,8 +876,10 @@ function AuditLog({ auditLog }) {
 
 // ─── App Root ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const isMobile = useIsMobile();
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [parts, setParts] = useState(seedParts);
   const [transactions, setTransactions] = useState(seedTransactions);
   const [auditLog, setAuditLog] = useState([
@@ -850,6 +901,7 @@ export default function App() {
     addAudit("Logged out");
     setUser(null);
     setPage("dashboard");
+    setIsSidebarOpen(false);
   }
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;
@@ -869,8 +921,22 @@ export default function App() {
   return (
     <AuthContext.Provider value={authValue}>
       <div style={S.app}>
-        <Sidebar active={page} onNav={setPage} />
-        <div style={S.main}>{pages[page]}</div>
+        {isMobile && <MobileNav onMenuClick={() => setIsSidebarOpen(true)} />}
+        <Sidebar
+          active={page}
+          onNav={setPage}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <div style={{
+          ...S.main,
+          marginLeft: isMobile ? 0 : 240,
+          paddingTop: isMobile ? 84 : 24,
+          paddingLeft: isMobile ? 12 : 32,
+          paddingRight: isMobile ? 12 : 32,
+        }}>
+          {pages[page]}
+        </div>
       </div>
     </AuthContext.Provider>
   );
