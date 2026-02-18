@@ -591,7 +591,7 @@ function PartForm({ part, onSave, onCancel }) {
 }
 
 // ─── Parts Catalog ────────────────────────────────────────────────────────────
-function PartsCatalog({ parts, setParts, addAudit }) {
+function PartsCatalog({ parts, setParts, addAudit, secureFetch }) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const canEdit = user.role !== ROLES.VIEWER;
@@ -616,6 +616,7 @@ function PartsCatalog({ parts, setParts, addAudit }) {
   }, [parts, search, filterCat, filterLoc, filterStatus]);
 
   async function handleSave(form) {
+    const fetch = window.secureFetch || window.fetch;
     if (editing) {
       try {
         const res = await fetch(`/api/parts/${editing.id}`, {
@@ -631,7 +632,7 @@ function PartsCatalog({ parts, setParts, addAudit }) {
       } catch (err) { console.error(err); }
     } else {
       try {
-        const res = await fetch('/api/parts', {
+        const res = await secureFetch('/api/parts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(form)
@@ -745,7 +746,7 @@ function PartsCatalog({ parts, setParts, addAudit }) {
 }
 
 // ─── Stock Movements ──────────────────────────────────────────────────────────
-function StockMovements({ parts, setParts, transactions, setTransactions, addAudit }) {
+function StockMovements({ parts, setParts, transactions, setTransactions, addAudit, secureFetch }) {
   const { user } = useAuth();
   const canEdit = user.role !== ROLES.VIEWER;
   const [showForm, setShowForm] = useState(false);
@@ -768,7 +769,7 @@ function StockMovements({ parts, setParts, transactions, setTransactions, addAud
     if (form.type === "OUT" && qty > part.quantity) { alert("Insufficient stock"); return; }
 
     try {
-      const res = await fetch('/api/transactions', {
+      const res = await secureFetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ partId, type: form.type, quantity: qty, reference: form.reference, note: form.note, userId: user.id })
@@ -1086,18 +1087,34 @@ export default function App() {
     }
   }, [user]);
 
+  const secureFetch = async (url, options = {}) => {
+    const token = localStorage.getItem('auth_token');
+    const headers = {
+      ...options.headers,
+      'Authorization': token ? `Bearer ${token}` : undefined,
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401 || res.status === 403) {
+      handleLogout();
+      return res;
+    }
+    return res;
+  };
+  window.secureFetch = secureFetch;
+
   async function loadData() {
     setLoading(true);
     try {
-      const partsRes = await fetch('/api/parts');
+      const partsRes = await secureFetch('/api/parts');
+      if (!partsRes.ok) return;
       const partsData = await partsRes.json();
       setParts(partsData);
 
-      const txRes = await fetch('/api/transactions');
+      const txRes = await secureFetch('/api/transactions');
       const txData = await txRes.json();
       setTransactions(txData);
 
-      const auditRes = await fetch('/api/audit');
+      const auditRes = await secureFetch('/api/audit');
       const auditData = await auditRes.json();
       setAuditLog(auditData);
     } catch (err) {
@@ -1109,13 +1126,13 @@ export default function App() {
 
   async function addAudit(action) {
     try {
-      await fetch('/api/audit', {
+      await secureFetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, userId: user.id })
       });
       // Refresh audit log
-      const res = await fetch('/api/audit');
+      const res = await secureFetch('/api/audit');
       const data = await res.json();
       setAuditLog(data);
     } catch (err) {
@@ -1123,20 +1140,31 @@ export default function App() {
     }
   }
 
-  async function handleLogin(u) {
-    // In a real app, u comes from the LoginScreen which should fetch from API
-    // We will update LoginScreen to do the fetch, but here we just set user.
-    // Actually, let's update LoginScreen to pass the full user object from API.
-    setUser(u);
-    await fetch('/api/audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: "Logged in", userId: u.id })
-    });
+  async function handleLogin(data) {
+    const { token, user: userData } = data;
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    setUser(userData);
+
+    // addAudit depends on user being set, handleLogin sets it.
+    // However, addAudit also uses fetch which now needs token.
+    try {
+      await secureFetch('/api/audit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: "Logged in", userId: userData.id })
+      });
+    } catch (err) {
+      console.error("Failed to log in audit", err);
+    }
   }
 
   function handleLogout() {
     addAudit("Logged out");
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     setUser(null);
     setPage("dashboard");
     setIsSidebarOpen(false);
@@ -1151,8 +1179,8 @@ export default function App() {
 
   const pages = {
     dashboard: <Dashboard parts={parts} transactions={transactions} />,
-    parts: <PartsCatalog parts={parts} setParts={setParts} addAudit={addAudit} />,
-    movements: <StockMovements parts={parts} setParts={setParts} transactions={transactions} setTransactions={setTransactions} addAudit={addAudit} />,
+    parts: <PartsCatalog parts={parts} setParts={setParts} addAudit={addAudit} secureFetch={secureFetch} />,
+    movements: <StockMovements parts={parts} setParts={setParts} transactions={transactions} setTransactions={setTransactions} addAudit={addAudit} secureFetch={secureFetch} />,
     alerts: <Alerts parts={parts} />,
     reports: <Reports parts={parts} transactions={transactions} />,
     traceability: <Traceability parts={parts} />,

@@ -49,9 +49,9 @@ CREATE TABLE audit_logs (
 
 -- Users
 INSERT INTO users (username, password, name, role) VALUES
-('admin', 'admin', 'Admin User', 'Admin'),
-('controller', 'ctrl1', 'Jane Martinez', 'Stock Controller'),
-('viewer', 'view1', 'Tom Chen', 'Viewer');
+('admin', '$2b$10$Nn65IZCmR/yGhD861b/uF.YmTGEY4vKtrZgK7iXhgmnfRzzqniCx6', 'Admin User', 'Admin'),
+('controller', '$2b$10$ujcytau579Z10lSalVYfPOemteM6ymtjr/gR/.rvZAnGzmmp.bm6C', 'Jane Martinez', 'Stock Controller'),
+('viewer', '$2b$10$ih8ae2TgsNAnisiEecydYeHJ/as4wWKb4JBCcfy6zsifAnojDcQmy', 'Tom Chen', 'Viewer');
 
 -- Parts
 INSERT INTO parts (part_number, description, category, manufacturer, serial_number, batch_number, quantity, reorder_point, location, condition, cert_of_conformance, shelf_life, unit_cost) VALUES

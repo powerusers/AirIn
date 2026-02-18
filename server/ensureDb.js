@@ -1,13 +1,13 @@
 import db from './db.js';
 
 export async function ensureDb() {
-    console.log('Checking database schema...');
-    const client = await db.pool.connect();
-    try {
-        await client.query('BEGIN');
+  console.log('Checking database schema...');
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
 
-        // Users
-        await client.query(`
+    // Users
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(50) UNIQUE NOT NULL,
@@ -17,8 +17,8 @@ export async function ensureDb() {
       )
     `);
 
-        // Parts
-        await client.query(`
+    // Parts
+    await client.query(`
       CREATE TABLE IF NOT EXISTS parts (
         id SERIAL PRIMARY KEY,
         part_number VARCHAR(50) NOT NULL,
@@ -37,8 +37,8 @@ export async function ensureDb() {
       )
     `);
 
-        // Transactions
-        await client.query(`
+    // Transactions
+    await client.query(`
       CREATE TABLE IF NOT EXISTS transactions (
         id SERIAL PRIMARY KEY,
         part_id INTEGER REFERENCES parts(id),
@@ -51,8 +51,8 @@ export async function ensureDb() {
       )
     `);
 
-        // Audit Logs
-        await client.query(`
+    // Audit Logs
+    await client.query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id SERIAL PRIMARY KEY,
         action VARCHAR(255) NOT NULL,
@@ -61,21 +61,22 @@ export async function ensureDb() {
       )
     `);
 
-        // Check if seeded
-        const res = await client.query('SELECT COUNT(*) FROM users');
-        if (parseInt(res.rows[0].count) === 0) {
-            console.log('Seeding initial data...');
+    // Check if seeded
+    const res = await client.query('SELECT COUNT(*) FROM users');
+    if (parseInt(res.rows[0].count) === 0) {
+      console.log('Seeding initial data...');
 
-            // Seed Users
-            await client.query(`
+      // Seed Users
+      // admin: admin, controller: ctrl1, viewer: view1 (all hashed)
+      await client.query(`
         INSERT INTO users (username, password, name, role) VALUES
-        ('admin', 'admin', 'Admin User', 'Admin'),
-        ('controller', 'ctrl1', 'Jane Martinez', 'Stock Controller'),
-        ('viewer', 'view1', 'Tom Chen', 'Viewer')
+        ('admin', '$2b$10$u7wqKmFroYJZyBd15/naMeSX2EbSg7gOHPHUaClK5w25xtTDkyRLS', 'Admin User', 'Admin'),
+        ('controller', '$2b$10$Wu4jvzz6x1KmxBCtrtW3LugmbQuX4C6plQ/0cRDmikDWfOJ3L6/0m', 'Jane Martinez', 'Stock Controller'),
+        ('viewer', '$2b$10$fjL8tJwSMBvcHxLQ.iGsi.OKr8jlu5Klhsj.KU9XC/4dbH/IsdI3W', 'Tom Chen', 'Viewer')
       `);
 
-            // Seed Parts
-            await client.query(`
+      // Seed Parts
+      await client.query(`
         INSERT INTO parts (part_number, description, category, manufacturer, serial_number, batch_number, quantity, reorder_point, location, condition, cert_of_conformance, shelf_life, unit_cost) VALUES
         ('PN-7201-A', 'Turbine Blade Assembly', 'Engine', 'Rolls-Royce', 'SN-TR-90412', 'BT-2025-001', 12, 5, 'Warehouse A', 'New', 'COC-RR-2025-0412', '2028-06-15', 14500.00),
         ('PN-3305-C', 'EFIS Display Unit', 'Avionics', 'Honeywell', 'SN-EF-77231', 'BT-2025-002', 3, 4, 'Warehouse B', 'Serviceable', 'COC-HW-2025-0098', '2027-12-01', 32000.00),
@@ -87,9 +88,9 @@ export async function ensureDb() {
         ('PN-2255-H', 'AN3-5A Bolt', 'Hardware', 'SPS Technologies', '', 'BT-2025-060', 500, 200, 'Warehouse A', 'New', 'COC-SPS-2025-0060', NULL, 1.50)
       `);
 
-            // Seed Transactions
-            // NOTE: We assume IDs 1-8 for parts and 1-3 for users generated above.
-            await client.query(`
+      // Seed Transactions
+      // NOTE: We assume IDs 1-8 for parts and 1-3 for users generated above.
+      await client.query(`
         INSERT INTO transactions (part_id, type, quantity, date, reference, note, user_id) VALUES
         (1, 'IN', 12, '2025-01-15 09:30:00', 'PO-2025-001', 'Initial stock receipt', 2),
         (2, 'IN', 5, '2025-01-20 14:00:00', 'PO-2025-003', 'Replenishment order', 2),
@@ -98,15 +99,15 @@ export async function ensureDb() {
         (6, 'OUT', 5, '2025-02-14 16:30:00', 'WO-B737-012', 'Issued to 737 A-Check', 2),
         (5, 'OUT', 3, '2025-02-01 11:00:00', 'WO-A330-007', 'Issued — found unserviceable', 1)
       `);
-        }
-
-        await client.query('COMMIT');
-        console.log('Database schema verified.');
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error ensuring database schema:', err);
-        throw err;
-    } finally {
-        client.release();
     }
+
+    await client.query('COMMIT');
+    console.log('Database schema verified.');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error ensuring database schema:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
 }
